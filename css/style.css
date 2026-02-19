@@ -1,0 +1,154 @@
+/*
+    Actividad 4: Generador de Alumnos
+    Valdez Miranda Elías
+    Ingeniería en Sistemas de Información, Universidad de Sonora
+    Clave 4116: Base de Datos II
+    Profesor Abril García José Humberto
+    18 de febrero de 2026
+*/
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #f5f5f5;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.container {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+label {
+    font-weight: 600;
+    color: #555;
+    font-size: 14px;
+}
+
+input[type="number"],
+select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+input[type="number"]:focus,
+select:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.btn-preset {
+    background-color: #2196F3;
+    color: white;
+}
+
+.btn-preset:hover {
+    background-color: #1976D2;
+}
+
+.btn-generate {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.btn-generate:hover {
+    background-color: #45a049;
+}
+
+.btn-copy {
+    background-color: #17a2b8;
+    color: white;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.btn-copy:hover {
+    background-color: #138496;
+}
+
+.output-container {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    min-height: 100px;
+    max-height: 600px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.output-container:empty::before {
+    content: 'Los resultados aparecerán aquí...';
+    color: #999;
+    font-style: italic;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-group {
+        width: 100%;
+    }
+
+    input[type="number"],
+    select,
+    button {
+        width: 100%;
+    }
+}
