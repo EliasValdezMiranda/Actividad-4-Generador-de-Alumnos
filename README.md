@@ -1,5 +1,6 @@
 # Actividad-4-Generador-de-Alumnos
 Implementación de la actividad 4 en Base de Datos II (José Humberto Abril García)
+**Por Elías Valdez Miranda**
 
 **Instrucciones:**
 * Desarrolle una aplicación que permita generar de forma pseudoaleatoria alumnos.     
