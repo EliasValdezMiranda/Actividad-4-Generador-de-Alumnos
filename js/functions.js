@@ -434,16 +434,20 @@ function generar(eleccion) {
     eleccion = parseInt(eleccion)
     switch (eleccion) {
         case 0:
-            generarSQL();
+            generarMariaDBSQL();
             generado = 0;
             break;
         case 1:
-            generarCSV();
+            generarPostgreSQL();
             generado = 1;
             break;
         case 2:
-            generarJSON();
+            generarCSV();
             generado = 2;
+            break;
+        case 3:
+            generarJSON();
+            generado = 3;
             break;
         default:
             alert("Este mensaje no debería aparecer. Algo está mal si aparece")
@@ -455,9 +459,126 @@ function obtenerIndiceAleatorio(cantidad) {
     return Math.floor(Math.random() * cantidad);
 }
 
-// Función para generar un comando SQL
-function generarSQL() {
-    salida = 'INSERT INTO alumnos (expediente, app1, app2, nombres, correo) VALUES <br>';
+function obtenerFechaNacimientoAleatoria() {
+    // Rango de fechas
+    const fechaInicio = new Date('1990-01-01').getTime();
+    const fechaFin = new Date('2008-01-01').getTime();
+    
+    // Generar un timestamp al azar entre la fecha de inicio y la fecha de fin
+    const timestampAleatorio = fechaInicio + Math.random() * (fechaFin - fechaInicio);
+    
+    // Convertir la fecha obtenida anteriormente a objeto Date
+    const fechaAleatoria = new Date(timestampAleatorio);
+    
+    // Formatear la fecha como YYYY-MM-DD para MariaDB
+    const año = fechaAleatoria.getFullYear();
+    const mes = String(fechaAleatoria.getMonth() + 1).padStart(2, '0');
+    const dia = String(fechaAleatoria.getDate()).padStart(2, '0');
+    
+    return `${año}-${mes}-${dia}`;
+}
+
+// Example usage in a SQL command:
+const sqlCommand = `INSERT INTO your_table (birth_date) VALUES ('${getRandomBirthDate()}')`;
+console.log(sqlCommand);
+
+// Función para generar un comando MariaDB SQL
+function generarMariaDBSQL() {
+    salida = `CREATE DATABASE IF NOT EXISTS sistema_escolar;<br>`;
+    salida += `USE sistema_escolar;<br>`;
+    salida += `DROP TABLE IF EXISTS alumnos;<br>`;
+    salida += `CREATE TABLE IF NOT EXISTS alumnos (<br>`
+    salida += `&emsp;expediente INTEGER NOT NULL UNIQUE CHECK(LENGTH(expediente) = 9 AND expediente > 0),<br>`
+    salida += `&emsp;app1 VARCHAR(255) NOT NULL CHECK(LENGTH(TRIM(app1)) > 0),<br>`
+    salida += `&emsp;app2 VARCHAR(255) CHECK(APP2 IS NULL OR LENGTH(TRIM(app2)) > 0),<br>`
+    salida += `&emsp;nombres VARCHAR(255) NOT NULL CHECK(LENGTH(TRIM(nombres)) > 0),<br>`
+    salida += `&emsp;correo VARCHAR(255) NOT NULL UNIQUE CHECK(correo = CONCAT("a", expediente, "@unison.mx")),<br>`
+    salida += `&emsp;fecha_nacimiento DATE NOT NULL,<br>`
+    salida += `&emsp;sexo ENUM('MUJER', 'HOMBRE', 'NO BINARIO') NOT NULL<br>`
+    salida += `);<br>`
+    salida += `DELIMITER $$<br>`
+    salida += `CREATE TRIGGER bi_alumnos_app1<br>`
+    salida += `BEFORE INSERT ON alumnos FOR EACH ROW<br>`
+    salida += `BEGIN<br>`
+    salida += `&emsp;SET NEW.app1 = TRIM(NEW.app1);<br>`
+    salida += `END$$<br>`
+    salida += `CREATE TRIGGER bi_alumnos_app2<br>`
+    salida += `BEFORE INSERT ON alumnos FOR EACH ROW<br>`
+    salida += `BEGIN<br>`
+    salida += `&emsp;IF TRIM(NEW.app2) = '' THEN<br>`
+    salida += `&emsp;&emsp;SET NEW.app2 = NULL;<br>`
+    salida += `&emsp;END IF;<br>`
+    salida += `END $$<br>`
+    salida += `DELIMITER ;<br>`
+    salida += 'INSERT INTO alumnos (expediente, app1, app2, nombres, correo, fecha_nacimiento, sexo) VALUES <br>';
+    let expediente = MATRICULA_BASE;
+    let ITERACIONES = document.getElementById('registros').value;;
+    for (let i = 0; i < ITERACIONES; i++) {
+        // Indices aleatorios de matrices
+        let indiceMexicano = obtenerIndiceAleatorio(APELLIDOS_MEXICANOS.length);
+        let indiceJapones = obtenerIndiceAleatorio(APELLIDOS_JAPONESES.length);
+        let indiceNombre1 = obtenerIndiceAleatorio(NOMBRES_MEXICANOS.length);
+        let indiceNombre2 = obtenerIndiceAleatorio(NOMBRES_ARABES.length);
+
+        // Valores
+        expediente++;
+        let app1 = APELLIDOS_MEXICANOS[indiceMexicano].toUpperCase();
+        let app2 = APELLIDOS_JAPONESES[indiceJapones] == "NULL" ?
+            `NULL` 
+            : APELLIDOS_JAPONESES[indiceJapones].toUpperCase();
+        let nombre = obtenerIndiceAleatorio(2) == 1 ?
+            `${NOMBRES_MEXICANOS[indiceNombre1].toUpperCase()} ${NOMBRES_ARABES[indiceNombre2].toUpperCase()}`
+            : `${NOMBRES_MEXICANOS[indiceNombre1].toUpperCase()}`;
+        let correo = `a${expediente}${DOMINIO_CORREO}`;
+        let fecha_nacimiento = obtenerFechaNacimientoAleatoria();
+        let sexo = 1 + obtenerIndiceAleatorio(3);
+
+        // Cadena de salida
+        salida += `(${expediente}, '${app1}', ${app2 == `NULL` ? `NULL` : `'` + app2 + `'`}, '${nombre}', '${correo}', '${fecha_nacimiento}', ${sexo}),<br>`;
+    }
+    salida = salida.slice(0,-5) + `;`;
+    document.getElementById("salida").innerHTML = salida;
+}
+
+// Función para generar un comando de PostgreSQL
+function generarPostgreSQL() {
+    salida = `DROP TABLE IF EXISTS alumnos;<br>`;
+    salida += `DROP TYPE IF EXISTS sexo_enum;<br>`;
+    salida += `CREATE TYPE sexo_enum AS ENUM ('MUJER', 'HOMBRE', 'NO BINARIO');<br>`;
+    salida += `CREATE TABLE IF NOT EXISTS alumnos (<br>`;
+    salida += `&emsp;expediente INTEGER NOT NULL UNIQUE CHECK (expediente > 0 AND length(expediente::text) = 9),<br>`;
+    salida += `&emsp;app1 VARCHAR(255) NOT NULL CHECK (length(trim(app1)) > 0),<br>`;
+    salida += `&emsp;app2 VARCHAR(255) CHECK (app2 IS NULL OR length(trim(app2)) > 0),<br>`;
+    salida += `&emsp;nombres VARCHAR(255) NOT NULL CHECK (length(trim(nombres)) > 0),<br>`;
+    salida += `&emsp;correo VARCHAR(255) NOT NULL UNIQUE CHECK (correo = 'a' || expediente || '@unison.mx'),<br>`;
+    salida += `&emsp;fecha_nacimiento DATE NOT NULL,<br>`;
+    salida += `&emsp;sexo sexo_enum NOT NULL<br>`;
+    salida += `);<br>`;
+    salida += `CREATE OR REPLACE FUNCTION bi_alumnos_app1_fn()<br>`;
+    salida += `RETURNS TRIGGER AS $$<br>`;
+    salida += `BEGIN<br>`;
+    salida += `&emsp;NEW.app1 := trim(NEW.app1);<br>`;
+    salida += `&emsp;RETURN NEW;<br>`;
+    salida += `END;<br>`;
+    salida += `$$ LANGUAGE plpgsql;<br>`;
+    salida += `CREATE TRIGGER bi_alumnos_app1<br>`;
+    salida += `BEFORE INSERT ON alumnos<br>`;
+    salida += `FOR EACH ROW<br>`;
+    salida += `EXECUTE FUNCTION bi_alumnos_app1_fn();<br>`;
+    salida += `CREATE OR REPLACE FUNCTION bi_alumnos_app2_fn()<br>`;
+    salida += `RETURNS TRIGGER AS $$<br>`;
+    salida += `BEGIN<br>`;
+    salida += `&emsp;IF NEW.app2 IS NOT NULL AND length(trim(NEW.app2)) = 0 THEN<br>`;
+    salida += `&emsp;&emsp;NEW.app2 := NULL;<br>`;
+    salida += `&emsp;END IF;<br>`;
+    salida += `&emsp;RETURN NEW;<br>`;
+    salida += `END;<br>`;
+    salida += `$$ LANGUAGE plpgsql;<br>`;
+    salida += `CREATE TRIGGER bi_alumnos_app2<br>`;
+    salida += `BEFORE INSERT ON alumnos<br>`;
+    salida += `FOR EACH ROW<br>`;
+    salida += `EXECUTE FUNCTION bi_alumnos_app2_fn();<br>`;
+    salida += 'INSERT INTO alumnos (expediente, app1, app2, nombres, correo, fecha_nacimiento, sexo) VALUES <br>';
     let expediente = MATRICULA_BASE;
     let ITERACIONES = document.getElementById('registros').value;;
     for (let i = 0; i < ITERACIONES; i++) {
@@ -477,9 +598,25 @@ function generarSQL() {
             `${NOMBRES_MEXICANOS[indiceNombre1].toUpperCase()} ${NOMBRES_ARABES[indiceNombre2].toUpperCase()}`
             : `${NOMBRES_MEXICANOS[indiceNombre1].toUpperCase()}`;
         let correo = `a${expediente}${DOMINIO_CORREO}`;
+        let fecha_nacimiento = obtenerFechaNacimientoAleatoria();
+        let sexo = 1 + obtenerIndiceAleatorio(3);
+        switch (sexo) {
+        case 1:
+            sexo = 'MUJER';
+            break;
+        case 2:
+            sexo = 'HOMBRE';
+            break;
+        case 3:
+            sexo = 'NO BINARIO';
+            break;
+        default:
+            alert("Este mensaje no debería aparecer. Por favor dejale saber al staff.");
+            break;
+    }
 
         // Cadena de salida
-        salida += `(${expediente}, '${app1}', ${app2 == `NULL` ? `NULL` : `'` + app2 + `'`}, '${nombre}', '${correo}'),<br>`;
+        salida += `(${expediente}, '${app1}', ${app2 == `NULL` ? `NULL` : `'` + app2 + `'`}, '${nombre}', '${correo}', '${fecha_nacimiento}', '${sexo}'),<br>`;
     }
     salida = salida.slice(0,-5) + `;`;
     document.getElementById("salida").innerHTML = salida;
@@ -580,13 +717,17 @@ function guardarArchivo(eleccion) {
     switch (eleccion) {
         case 0:
             alert("Generando archivo SQL");
-            var1.setAttribute("download", "sistema_escolar.sql");
+            var1.setAttribute("download", "sistema_escolar_mariadb.sql");
             break;
         case 1:
+            alert("Generando archivo SQL");
+            var1.setAttribute("download", "sistema_escolar_postgresql.sql");
+            break;
+        case 2:
             alert("Generando archivo CSV");
             var1.setAttribute("download", "sistema_escolar.csv");
             break;
-        case 2:
+        case 3:
             alert("Generando archivo JSON");
             var1.setAttribute("download", "sistema_escolar.json");
             break;
